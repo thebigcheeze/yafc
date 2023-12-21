@@ -13,6 +13,7 @@ namespace YAFC.Model
         public ProjectPageContents content { get; }
         public bool active { get; private set; }
         public bool visible { get; internal set; }
+        [SkipSerialization] public float savedScroll { get; set; }
         [SkipSerialization] public string modelError { get; set; }
         public bool deleted { get; private set; }
 
