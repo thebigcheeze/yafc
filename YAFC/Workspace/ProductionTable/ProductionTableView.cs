@@ -123,19 +123,18 @@ namespace YAFC
                     gui.ShowDropDown(delegate(ImGui imgui)
                     {
                         view.DrawRecipeTagSelect(imgui, recipe);
-                        
+                        if (view.hasActiveQuery && imgui.BuildButton("Focus search") && imgui.CloseDropdown())
+                        {
+                            recipe.shouldFocusOnEmptySearch = true;
+                            gui.PropagateMessage(new SearchCancelMessage("user wants to focus item"));
+                        }
+
                         if (recipe.subgroup == null && imgui.BuildButton("Create nested table") && imgui.CloseDropdown())
                             recipe.RecordUndo().subgroup = new ProductionTable(recipe);
                         
                         if (recipe.subgroup != null && imgui.BuildButton("Add nested desired product") && imgui.CloseDropdown())
                             view.AddDesiredProductAtLevel(recipe.subgroup);
 
-                        if (recipe.subgroup != null && view.hasActiveQuery && imgui.BuildButton("Focus search") && imgui.CloseDropdown())
-                        {
-                            recipe.shouldFocusOnEmptySearch = true;
-                            gui.PropagateMessage(new SearchCancelMessage("user wants to focus item"));
-                        }
-                            
                         if (recipe.subgroup != null && imgui.BuildButton("Add raw recipe") && imgui.CloseDropdown())
                             SelectObjectPanel.Select(Database.recipes.all, "Select raw recipe", r => view.AddRecipe(recipe.subgroup, r));
 
