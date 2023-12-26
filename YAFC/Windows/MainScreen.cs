@@ -30,7 +30,7 @@ namespace YAFC
         private ProjectPage _secondaryPage;
         public ProjectPage secondaryPage => _secondaryPage;
         private ProjectPageView secondaryPageView;
-        
+
         private bool analysisUpdatePending;
         private SearchQuery pageSearch;
         private SearchQuery pageListSearch;
@@ -46,11 +46,11 @@ namespace YAFC
             RegisterPageView<ProductionTable>(new ProductionTableView());
             RegisterPageView<AutoPlanner>(new AutoPlannerView());
             RegisterPageView<ProductionSummary>(new ProductionSummaryView());
-            searchGui = new ImGui(BuildSearch, new Padding(1f)) {boxShadow = RectangleBorder.Thin, boxColor = SchemeColor.Background};
+            searchGui = new ImGui(BuildSearch, new Padding(1f)) { boxShadow = RectangleBorder.Thin, boxColor = SchemeColor.Background };
             Instance = this;
             tabBar = new MainScreenTabBar(this);
-            allPages = new VirtualScrollList<ProjectPage>(30, new Vector2(0f, 2f), BuildPage, collapsible:true);
-            Create("Yet Another Factorio Calculator v"+YafcLib.version, display);
+            allPages = new VirtualScrollList<ProjectPage>(30, new Vector2(0f, 2f), BuildPage, collapsible: true);
+            Create("Yet Another Factorio Calculator v" + YafcLib.version, display);
             SetProject(project);
         }
 
@@ -77,7 +77,7 @@ namespace YAFC
 
             if (project.displayPages.Count == 0)
                 project.displayPages.Add(project.pages[0].guid);
-            
+
             SetActivePage(project.FindPage(project.displayPages[0]));
             project.metaInfoChanged += ProjectOnMetaInfoChanged;
             project.settings.changed += ProjectSettingsChanged;
@@ -109,9 +109,9 @@ namespace YAFC
             {
                 if (element.icon != null)
                     gui.BuildIcon(element.icon.icon);
-                gui.RemainingRow().BuildText(element.name, color:element.visible ? SchemeColor.BackgroundText : SchemeColor.BackgroundTextFaint);
+                gui.RemainingRow().BuildText(element.name, color: element.visible ? SchemeColor.BackgroundText : SchemeColor.BackgroundTextFaint);
             }
-            var evt = gui.BuildButton(gui.lastRect, SchemeColor.PureBackground, SchemeColor.Grey, button:0);
+            var evt = gui.BuildButton(gui.lastRect, SchemeColor.PureBackground, SchemeColor.Grey, button: 0);
             if (evt)
             {
                 if (gui.actionParameter == SDL.SDL_BUTTON_MIDDLE)
@@ -178,7 +178,7 @@ namespace YAFC
         {
             registeredPageViews[typeof(T)] = pageView;
         }
-        
+
         public void RebuildProjectView()
         {
             rootGui.MarkEverythingForRebuild();
@@ -189,7 +189,16 @@ namespace YAFC
         }
 
         protected override void BuildContent(ImGui gui)
-        {            
+        {
+            if (!addedHandlerContent)
+            {
+                addedHandlerContent = true;
+                gui.AddMessageHandler<SearchCancelMessage>(msg =>
+                {
+                    SetSearch(default);
+                    return true;
+                });
+            }
             if (pseudoScreens.Count > 0)
             {
                 var top = pseudoScreens[0];
@@ -270,12 +279,13 @@ namespace YAFC
                     vsize.Y /= 2f;
                     _activePageView.Build(gui, vsize);
                     secondaryPageView.Build(gui, vsize);
-                } else
+                }
+                else
                     _activePageView.Build(gui, pageVisibleSize);
                 if (pageSearch.query != null && gui.isBuilding)
                 {
                     var searchSize = searchGui.CalculateState(30, gui.pixelsPerUnit);
-                    gui.DrawPanel(new Rect(pageVisibleSize.X-searchSize.X, usedHeaderSpace, searchSize.X, searchSize.Y), searchGui);
+                    gui.DrawPanel(new Rect(pageVisibleSize.X - searchSize.X, usedHeaderSpace, searchSize.X, searchSize.Y), searchGui);
                 }
             }
             else
@@ -287,10 +297,10 @@ namespace YAFC
                 }
             }
         }
-        
+
         public ProjectPage AddProjectPage(string name, FactorioObject icon, Type contentType, bool setActive, bool initNew)
         {
-            var page = new ProjectPage(project, contentType) {name = name, icon = icon};
+            var page = new ProjectPage(project, contentType) { name = name, icon = icon };
             if (initNew)
                 page.content.InitNew();
             project.RecordUndo().pages.Add(page);
@@ -320,7 +330,7 @@ namespace YAFC
             }
             allPages.Build(gui);
         }
-        
+
         public void BuildSubHeader(ImGui gui, string text)
         {
             using (gui.EnterGroup(ObjectTooltip.contentPadding))
@@ -370,7 +380,7 @@ namespace YAFC
         private void SettingsDropdown(ImGui gui)
         {
             gui.boxColor = SchemeColor.Background;
-            if (gui.BuildContextMenuButton("Undo", "Ctrl+" +ImGuiUtils.ScanToString(SDL.SDL_Scancode.SDL_SCANCODE_Z)) && gui.CloseDropdown())
+            if (gui.BuildContextMenuButton("Undo", "Ctrl+" + ImGuiUtils.ScanToString(SDL.SDL_Scancode.SDL_SCANCODE_Z)) && gui.CloseDropdown())
                 project.undo.PerformUndo();
             if (gui.BuildContextMenuButton("Save", "Ctrl+" + ImGuiUtils.ScanToString(SDL.SDL_Scancode.SDL_SCANCODE_S)) && gui.CloseDropdown())
                 SaveProject().CaptureException();
@@ -394,17 +404,17 @@ namespace YAFC
 
             if (gui.BuildContextMenuButton("Dependency Explorer") && gui.CloseDropdown())
                 SelectObjectPanel.Select(Database.objects.all, "Open Dependency Explorer", DependencyExplorer.Show);
-            
+
             BuildSubHeader(gui, "Extra");
 
             if (gui.BuildContextMenuButton("Run Factorio"))
             {
                 var factorioPath = DataUtils.dataPath + "/../bin/x64/factorio";
                 var args = string.IsNullOrEmpty(DataUtils.modsPath) ? null : "--mod-directory \"" + DataUtils.modsPath + "\"";
-                Process.Start(new ProcessStartInfo(factorioPath, args) {UseShellExecute = true});
+                Process.Start(new ProcessStartInfo(factorioPath, args) { UseShellExecute = true });
                 gui.CloseDropdown();
             }
-            
+
             if (gui.BuildContextMenuButton("Check for updates") && gui.CloseDropdown())
                 DoCheckForUpdates();
 
@@ -413,6 +423,8 @@ namespace YAFC
         }
 
         private bool saveConfirmationActive;
+        private bool addedHandlerContent;
+
         public override bool preventQuit => true;
 
         protected override async void Close()
@@ -523,12 +535,14 @@ namespace YAFC
                     else project.undo.PerformUndo();
                     _activePageView?.Rebuild(false);
                     secondaryPageView?.Rebuild(false);
-                } else if (key.scancode == SDL.SDL_Scancode.SDL_SCANCODE_Y)
+                }
+                else if (key.scancode == SDL.SDL_Scancode.SDL_SCANCODE_Y)
                 {
                     project.undo.PerformRedo();
                     _activePageView?.Rebuild(false);
                     secondaryPageView?.Rebuild(false);
-                } else if (key.scancode == SDL.SDL_Scancode.SDL_SCANCODE_N)
+                }
+                else if (key.scancode == SDL.SDL_Scancode.SDL_SCANCODE_N)
                     ShowNeie();
                 else if (key.scancode == SDL.SDL_Scancode.SDL_SCANCODE_F)
                     ShowSearch();
@@ -568,7 +582,7 @@ namespace YAFC
 
             return SaveProjectAs();
         }
-        
+
         private async void LoadProjectLight()
         {
             if (project.unsavedChangesCount > 0 && !await ConfirmUnsavedChanges())
@@ -604,9 +618,9 @@ namespace YAFC
 
         public bool TextInput(string input) => true;
         public bool KeyUp(SDL.SDL_Keysym key) => true;
-        public void FocusChanged(bool focused) {}
+        public void FocusChanged(bool focused) { }
         private new void MainRender() => base.MainRender();
-        
+
         private class FadeDrawer : IRenderable
         {
             private SDL.SDL_Rect srcRect;
@@ -621,8 +635,8 @@ namespace YAFC
                 Instance.surface.EndRenderToTexture();
                 for (var i = 0; i < 2; i++)
                 {
-                    var halfSize = new SDL.SDL_Rect() {w = size.w/2, h = size.h/2};
-                    var halfTexture = Instance.surface.CreateTexture(SDL.SDL_PIXELFORMAT_RGBA8888, (int) SDL.SDL_TextureAccess.SDL_TEXTUREACCESS_TARGET, halfSize.w, halfSize.h);
+                    var halfSize = new SDL.SDL_Rect() { w = size.w / 2, h = size.h / 2 };
+                    var halfTexture = Instance.surface.CreateTexture(SDL.SDL_PIXELFORMAT_RGBA8888, (int)SDL.SDL_TextureAccess.SDL_TEXTUREACCESS_TARGET, halfSize.w, halfSize.h);
                     SDL.SDL_SetRenderTarget(renderer, halfTexture.handle);
                     var bgColor = SchemeColor.PureBackground.ToSdlColor();
                     SDL.SDL_SetRenderDrawColor(renderer, bgColor.r, bgColor.g, bgColor.b, bgColor.a);
@@ -661,7 +675,7 @@ namespace YAFC
             {
                 pageView.BuildPageTooltip(x, page.content);
                 if (isMiddleEdit)
-                    x.BuildText("Middle mouse button to edit", Font.text, true, color:SchemeColor.BackgroundTextFaint);
+                    x.BuildText("Middle mouse button to edit", Font.text, true, color: SchemeColor.BackgroundTextFaint);
             });
         }
     }

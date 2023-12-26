@@ -127,6 +127,14 @@ namespace YAFC
                     if (buildExpandedGroupRows || item == null)
                     {
                         var rect = grid.BuildRow(gui, recipe, depWidth);
+                        if (recipe is RecipeRow recipeRow)
+                        {
+                            if (recipeRow.shouldFocusOnEmptySearch)
+                            {
+                                recipeRow.shouldFocusOnEmptySearch = false;
+                                gui.PropagateMessage(new SetScrollPositionMessage(rect.Top));
+                            }
+                        }
                         if (item == null && gui.InitiateDrag(rect, rect, recipe, bgColor))
                             draggingRecipe = recipe;
                         else if (gui.ConsumeDrag(rect.Center, recipe))

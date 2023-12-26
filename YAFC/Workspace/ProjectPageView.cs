@@ -11,6 +11,8 @@ namespace YAFC
     {
 
         protected bool shouldSetScroll = false;
+        protected bool hasActiveQuery = false;
+        protected float targetScroll = 0f;
 
         protected ProjectPageView() : base(true, true, false)
         {
@@ -22,6 +24,8 @@ namespace YAFC
         public readonly ImGui bodyContent;
         private float contentWidth, headerHeight, contentHeight;
         private SearchQuery searchQuery;
+        private bool addedHandler;
+
         protected abstract void BuildHeader(ImGui gui);
         protected abstract void BuildContent(ImGui gui);
 
@@ -42,7 +46,11 @@ namespace YAFC
 
         public virtual float CalculateWidth() => headerContent.width;
 
-        public abstract void SetScroll();
+        public virtual void SetScroll()
+        {
+            this.scroll = targetScroll;
+            targetScroll = 0f;
+        }
 
         public virtual void SetSearchQuery(SearchQuery query)
         {
@@ -54,6 +62,17 @@ namespace YAFC
 
         public void Build(ImGui gui, Vector2 visibleSize)
         {
+            if (!addedHandler)
+            {
+                addedHandler = true;
+                gui.AddMessageHandler<SetScrollPositionMessage>(msg =>
+                {
+                    this.targetScroll = msg.Top;
+                    this.shouldSetScroll = true;
+                    return true;
+                });
+            }
+            
             if (gui.isBuilding)
             {
                 gui.spacing = 0f;
@@ -151,8 +170,11 @@ namespace YAFC
         public override void SetScroll()
         {
             Console.WriteLine("Writing saved scroll {0}", projectPage.savedScroll);
-            this.scroll = projectPage.savedScroll;
+            if (targetScroll == 0)
+                this.targetScroll = projectPage.savedScroll;
+            base.SetScroll();
         }
+
 
         public override void BuildPageTooltip(ImGui gui, ProjectPageContents contents) => BuildPageTooltip(gui, contents as T);
 
