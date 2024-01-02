@@ -519,6 +519,7 @@ namespace YAFC
             if (pseudoScreens.Count > 0)
                 pseudoScreens[^1].Activated();
             rootGui.Rebuild();
+            RebuildProjectView();
         }
 
         public bool KeyDown(SDL.SDL_Keysym key)
